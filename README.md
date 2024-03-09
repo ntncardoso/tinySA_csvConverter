@@ -24,7 +24,7 @@ git clone https://github.com/ntncardoso/tinySA_csvConverter
 
 Navigate to the project directory:
 
-cd your-repository-name
+cd tinySA_csvConverter
 
 Open the `index.html` file in your web browser to start using the application.
 
