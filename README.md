@@ -20,7 +20,7 @@ This project provides a simple web application for visualizing data from CSV fil
 
 Clone the repository to your local machine:
 
-git clone https://github.com/yourusername/your-repository-name.git
+git clone https://github.com/ntncardoso/tinySA_csvConverter
 
 Navigate to the project directory:
 
