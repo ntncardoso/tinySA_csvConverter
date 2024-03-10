@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CSV Data Visualization with Highcharts</title>
+    <title>CSV Data Visualization and Download</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
 </head>
 <body>
-    <input type="file" id="fileInput" accept=".csv">
+    <!-- Input for selecting multiple CSV files -->
+    <input type="file" id="fileInput" accept=".csv" multiple>
+    <!-- Dropdown for selecting a specific CSV file to visualize -->
+    <select id="fileSelect"></select>
+    <!-- Button to download the currently visualized CSV file's formatted data -->
+    <button id="downloadBtn" style="display:none;">Download Formatted CSV</button>
+    <!-- Container for the Highcharts graph -->
     <div id="container" style="width:100%; height:400px;"></div>
-
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    
     <script src="script.js"></script>
 </body>
 </html>

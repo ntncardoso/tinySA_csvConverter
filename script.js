@@ -1,81 +1,89 @@
+// Ensure DOM content is fully loaded before executing script
 document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('fileInput').addEventListener('change', handleFileChange, false);
+    // Get references to DOM elements
+    const fileInput = document.getElementById('fileInput');
+    const fileSelect = document.getElementById('fileSelect');
+    const downloadBtn = document.getElementById('downloadBtn');
+    let filesData = {}; // Object to store processed data for each file
 
-    async function handleFileChange(event) {
-        const file = event.target.files[0];
-        if (!file) {
-            alert('No file selected.');
-            return;
-        }
-        try {
-            const content = await readFile(file);
-            const data = processData(content);
-            drawChart(data);
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to process file: ' + error.message);
-        }
-    }
+    // Event listener for file input change
+    fileInput.addEventListener('change', async function(event) {
+        const files = event.target.files;
+        fileSelect.innerHTML = ''; // Reset file select options
+        filesData = {}; // Clear previous file data
+        downloadBtn.style.display = 'none'; // Initially hide download button
+        
+        // Process each selected file
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            try {
+                // Read and process file content
+                const content = await readFile(file);
+                const data = processData(content);
+                filesData[file.name] = data; // Store data keyed by file name
 
-    function readFile(file) {
-        return new Promise((resolve, reject) => {
-            const
-reader = new FileReader();
-reader.onload = e => resolve(e.target.result);
-reader.onerror = e => reject(new Error('Error reading file: ' + e));
-reader.readAsText(file);
+                // Add file option to dropdown
+                const option = document.createElement('option');
+                option.value = option.textContent = file.name;
+                fileSelect.appendChild(option);
+           
+} catch (error) {
+console.error('Error processing file:', file.name, error);
+}
+}
+
+    // Trigger chart update and download button preparation when a file is selected from dropdown
+    fileSelect.addEventListener('change', function() {
+        const selectedFile = this.value;
+        if (selectedFile && filesData[selectedFile]) {
+            drawChart(filesData[selectedFile]); // Draw chart for selected file
+            prepareDownloadBtn(filesData[selectedFile], selectedFile); // Prepare download button for new data
+            downloadBtn.style.display = 'inline'; // Show download button
+        }
+    });
 });
-}
 
-function processData(csv) {
-    const lines = csv.trim().split('\n');
-    const data = lines.map(line => {
-        const values = line.split(';'); // Assuming semicolon-separated values
-        let frequencyMHz = parseFloat(values[0]) / 1e6; // Convert Hz to MHz
-        let amplitudeDbm = parseFloat(values[1]);
-
-        // Format frequency to 3 decimal places as a number
-        frequencyMHz = Number(frequencyMHz.toFixed(3));
-
-        // Check for NaN values and log errors for debugging
-        if (isNaN(frequencyMHz) || isNaN(amplitudeDbm)) {
-            console.error('Invalid data for line:', line, '| Parsed as:', {frequencyMHz, amplitudeDbm});
-        }
-
-        return { x: frequencyMHz, y: amplitudeDbm };
-    }).filter(point => !isNaN(point.x) && !isNaN(point.y)); // Filter out invalid data points
-
-    return data;
-}
-
-function drawChart(data) {
-    Highcharts.chart('container', {
-        chart: {
-            type: 'scatter',
-            zoomType: 'xy'
-        },
-        title: {
-            text: 'Frequency vs. Amplitude'
-        },
-        xAxis: {
-            title: {
-                text: 'Frequency (MHz)'
-            },
-            startOnTick: true,
-            endOnTick: true,
-            showLastLabel: true
-        },
-        yAxis: {
-            title: {
-                text: 'Amplitude (dBm)'
-            }
-        },
-        series: [{
-            name: 'Measurements',
-            color: 'rgba(223, 83, 83, .5)',
-            data: data.map(item => [item.x, item.y])
-        }]
+// Function to read a file's content
+function readFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = event => resolve(event.target.result); // Successfully read
+        reader.onerror = event => reject(new Error('Error reading file: ' + event.target.error)); // Error occurred
+        reader.readAsText(file);
     });
 }
 
+// Function to process CSV content into a format suitable for Highcharts
+function processData(csv) {
+    return csv.trim().split('\n').map(line => {
+        const [frequencyHz, amplitudeDbm] = line.split(';').map(parseFloat);
+        return [frequencyHz / 1e6, amplitudeDbm]; // Convert Hz to MHz and pair with amplitude
+    }).filter(pair => !isNaN(pair[0]) && !isNaN(pair[1])); // Ensure both values are numbers
+}
+
+// Function to draw chart with Highcharts
+function drawChart(data) {
+    Highcharts.chart('container', {
+        chart: { type: 'line' },
+        title: { text: 'Frequency vs. Amplitude' },
+        xAxis: { title: { text: 'Frequency (MHz)' } },
+        yAxis: { title: { text: 'Amplitude (dBm)' } },
+        series: [{ name: 'Measurements', data }]
+    });
+}
+
+// Function to prepare download button for downloading formatted CSV data
+function prepareDownloadBtn(data, fileName) {
+    downloadBtn.onclick = function() {
+        const formattedCSV = data.map(pair => pair.join(';')).join('\n');
+        const blob = new Blob([formattedCSV], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Formatted_' + fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+}
 });
